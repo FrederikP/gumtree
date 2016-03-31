@@ -22,12 +22,17 @@ package com.github.gumtreediff.gen.jdt;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import com.github.gumtreediff.gen.jdt.cd.EntityType;
 import com.github.gumtreediff.tree.ITree;
 import com.github.gumtreediff.tree.TreeContext;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.SimplePropertyDescriptor;
+import org.eclipse.jdt.core.dom.StructuralPropertyDescriptor;
 
 import com.github.gumtreediff.gen.jdt.cd.EntityType;
 import com.github.gumtreediff.tree.ITree;
@@ -50,20 +55,39 @@ public abstract class AbstractJdtVisitor extends ASTVisitor {
     protected void pushNode(ASTNode n, String label) {
         int type = n.getNodeType();
         String typeName = n.getClass().getSimpleName();
-        push(type, typeName, label, n.getStartPosition(), n.getLength());
+        String propertyId = null;
+        StructuralPropertyDescriptor propertyDesc = n.getLocationInParent();
+        if (propertyDesc != null) {
+        	propertyId = propertyDesc.getId();
+        }
+		@SuppressWarnings("unchecked")
+		Map<String, Object> properties = n.properties();
+		@SuppressWarnings("unchecked")
+		List<StructuralPropertyDescriptor> structuralProperties = n.structuralPropertiesForType();
+		Map<SimplePropertyDescriptor, Object> simpleProperties = new HashMap<SimplePropertyDescriptor, Object>();
+		for (StructuralPropertyDescriptor prop :structuralProperties) {
+			if (prop.isSimpleProperty()) {
+				simpleProperties.put((SimplePropertyDescriptor) prop, n.getStructuralProperty(prop));
+			}
+		}
+        
+        push(type, typeName, label, n.getStartPosition(), n.getLength(), propertyId, properties, simpleProperties);
     }
 
-    protected void pushFakeNode(EntityType n, int startPosition, int length) {
+	protected void pushFakeNode(EntityType n, int startPosition, int length) {
         int type = -n.ordinal(); // Fake types have negative types (but does it matter ?)
         String typeName = n.name();
-        push(type, typeName, "", startPosition, length);
+        push(type, typeName, "", startPosition, length, "", new HashMap<String, Object>(), null);
     }
 
-    private void push(int type, String typeName, String label, int startPosition, int length) {
+    private void push(int type, String typeName, String label, int startPosition, int length, String propertyId, Map<String, Object> properties, Map<SimplePropertyDescriptor, Object> simpleProperties) {
         ITree t = context.createTree(type, label, typeName);
         t.setPos(startPosition);
         t.setLength(length);
-
+        t.setMetadata("propertyId", propertyId);
+        t.setMetadata("properties", properties);
+        t.setMetadata("simpleProperties", simpleProperties);
+        
         if (trees.isEmpty())
             context.setRoot(t);
         else {
