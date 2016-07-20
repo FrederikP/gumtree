@@ -53,16 +53,6 @@ public class JdtVisitor  extends AbstractJdtVisitor {
     }
 
     @Override
-    public boolean visit(TagElement e) {
-        return true;
-    }
-
-    @Override
-    public boolean visit(QualifiedName name) {
-        return false;
-    }
-
-    @Override
     public void postVisit(ASTNode n) {
         popNode();
     }

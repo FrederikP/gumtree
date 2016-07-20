@@ -43,7 +43,7 @@ public class TestJdtGenerator {
                 + "{ for (A f : foo) { System.out.println(f); } } }";
         ITree tree = new JdtTreeGenerator().generateFromString(input).getRoot();
         assertEquals(15, tree.getType());
-        assertEquals(32, tree.getSize());
+        assertEquals(34, tree.getSize());
     }
 
     @Test
